@@ -1,0 +1,132 @@
+# 🚀 AutoStream Conversational AI Agent
+
+An intelligent conversational agent built for **AutoStream**, a SaaS platform for automated video editing.
+This agent can understand user intent, answer product queries, identify high-intent users, and capture leads through a structured workflow.
+
+---
+
+# 🧰 How to Run the Project Locally
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/mathml-ai/Service_Hire_Agent
+cd Service_Hire_Agent
+```
+
+### 2. Create Virtual Environment
+
+```bash
+python -m venv venv
+source venv/bin/activate   # On Windows: venv\Scripts\activate
+```
+
+### 3. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Set Environment Variable
+
+Create a `.env` file or export directly:
+
+```bash
+export GEMINI_API_KEY="your_api_key_here"   # Linux/Mac
+setx GEMINI_API_KEY "your_api_key_here"     # Windows
+```
+
+### 5. Run the Application
+
+#### CLI Mode:
+
+```bash
+python agent.py
+```
+
+
+
+# 🧠 Architecture Explanation
+
+This project uses **LangGraph** as the core orchestration framework to build a deterministic and stateful conversational agent. LangGraph was chosen because it allows explicit control over workflow transitions while maintaining shared state across nodes. Instead of relying entirely on LLM-driven decisions, the system separates **control flow (deterministic)** from **intelligence (LLM-powered)**.
+
+The agent consists of multiple nodes:
+
+* Intent Detection Node
+* Greeting Node
+* RAG-based Query Node
+* Lead Capture Node
+* General/Fallback Node
+
+Routing is handled via a central router that maps detected intent to the appropriate node.
+
+State management is implemented using a hybrid approach:
+
+* **Structured State**: Tracks lead information (name, email, platform) and flow status
+* **Short-term Memory**: Stores recent conversation messages
+* **Summarized Memory**: Compresses older interactions to maintain context efficiently
+
+This ensures the agent remains context-aware across multiple turns while avoiding excessive token usage.
+
+LLMs (Gemini 2.5 Flash) are used only for:
+
+* Intent classification
+* Information extraction
+* Natural language responses
+* Memory summarization
+
+This design ensures reliability, debuggability, and production readiness.
+
+---
+
+# 📲 WhatsApp Integration (Using Webhooks)
+
+To deploy this agent on WhatsApp, we can integrate it using the **WhatsApp Business API (via providers like Twilio or Meta Cloud API)**.
+
+### Flow:
+
+1. **Webhook Setup**
+
+   * Configure a backend server (e.g., FastAPI/Flask)
+   * Expose a `/webhook` endpoint
+   * Register this endpoint with WhatsApp API provider
+
+2. **Incoming Message Handling**
+
+   * WhatsApp sends user messages to the webhook
+   * Extract message text and user ID (phone number)
+
+3. **Session Management**
+
+   * Maintain a session store (Redis/DB) keyed by user phone number
+   * Load the user’s agent state (memory + lead_state)
+
+4. **Agent Invocation**
+
+   * Pass user input into LangGraph agent:
+
+     ```python
+     response = graph.invoke(state)
+     ```
+
+5. **Send Response Back**
+
+   * Return the generated response via WhatsApp API
+
+6. **Persistence**
+
+   * Store updated state for future interactions
+
+---
+
+### Key Considerations:
+
+* Stateless APIs → require external state storage (Redis/DB)
+* Rate limits → handle retries and throttling
+* User identification → use phone number as unique key
+* Security → validate webhook signatures
+
+---
+
+
+---
